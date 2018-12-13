@@ -14,6 +14,12 @@ extern "C" {
 }
 
 
+struct MediaInfo {
+    std::string license;
+    std::string inputFile;
+    std::string outputFile;
+};
+
 class ChinaDrmParser {
 public:
     ChinaDrmParser();
@@ -23,7 +29,7 @@ public:
 
    bool initalized() const { return mInitialized; }
    int32_t parseTsData(const char *inputFile, const char * outputFile);
-
+   bool parseMediaInfo(std::string infoFile, MediaInfo &info);
     private:
         int32_t parseReturnCode(int retCode);
 
@@ -52,6 +58,8 @@ public:
          */
         uint32_t nalUnescape(uint8_t *destBuffer, uint8_t *srcBuffer, uint32_t srcBufferLength);
 
+
+    std::string trim(std::string &str);
 
     private:
         bool  mInitialized;

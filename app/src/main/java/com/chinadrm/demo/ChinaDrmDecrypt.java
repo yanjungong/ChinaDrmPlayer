@@ -6,5 +6,6 @@ public class ChinaDrmDecrypt {
         System.loadLibrary("gnustl_shared");
     }
 
-    public native boolean decrypt(String ticket, String srcFileName, String destFileName);
+    public native String decrypt(String ticket, String srcFileName, String destFileName);
+    public native void setSdcardPath(String sdcardPath);
 }

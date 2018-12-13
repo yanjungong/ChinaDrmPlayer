@@ -223,3 +223,59 @@ uint32_t ChinaDrmParser::nalUnescape(uint8_t *destBuffer, uint8_t *srcBuffer, ui
        }
        return di;
 }
+
+
+bool ChinaDrmParser::parseMediaInfo(std::string infoFile, MediaInfo &info){
+    FILE *f = fopen(infoFile.c_str(), "r");
+    if (f == NULL) {
+        return false;
+    }
+
+    char szBuffer[512] = {0};
+    std::string tagLicense = "license=";
+    std::string tagInputFile = "input_file=";
+    std::string tagOutputFile = "output_file=";
+    while (fgets(szBuffer, sizeof(szBuffer), f)){
+        std::string currentLine(szBuffer);
+        size_t pos = currentLine.find(tagLicense);
+        //UNILOGD("current line:%s", szBuffer);
+
+        if (pos != std::string::npos) {
+            info.license = currentLine.substr(pos + tagLicense.length(), currentLine.length());
+            info.license = trim(info.license);
+            //UNILOGD("license:%s", info.license.c_str());
+        } else if ( (pos = currentLine.find(tagInputFile)) != std::string::npos){
+            info.inputFile = currentLine.substr(pos + tagInputFile.length(), currentLine.length());
+            info.inputFile = trim(info.inputFile);
+            //UNILOGD("inputFile:%s, size:%d", info.inputFile.c_str(), info.inputFile.length());
+        } else if ( (pos = currentLine.find(tagOutputFile)) != std::string::npos) {
+            info.outputFile = currentLine.substr(pos + tagOutputFile.length(), currentLine.length());
+            info.outputFile = trim(info.outputFile);
+            //UNILOGD("outputFile:%s, size:%d", info.outputFile.c_str(), info.outputFile.length());
+        }
+    }
+
+    if (info.license.empty() || info.inputFile.empty() ) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+std::string ChinaDrmParser::trim(std::string &str) {
+   if (str.empty()){
+    return "";
+   }
+
+    std::string dest;
+   for (int i = 0; i < str.length(); i++){
+        char cur = str.at(i);
+        if (cur == ' ' || cur == '\r' || cur == '\n'){
+            continue;
+        }
+
+        dest += cur;
+   }
+
+    return dest;
+}
