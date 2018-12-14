@@ -232,9 +232,9 @@ bool ChinaDrmParser::parseMediaInfo(const char *infoFile, MediaInfo &info){
     }
 
     char szBuffer[512] = {0};
-    char *tagLicense = "license=";
-    char *tagInputFile = "input_file=";
-    char *tagOutputFile = "output_file=";
+    const char *tagLicense = "license=";
+    const char *tagInputFile = "input_file=";
+    const char *tagOutputFile = "output_file=";
 
      memset(info.license, 0, sizeof(info.license));
      memset(info.inputFile, 0, sizeof(info.inputFile));
@@ -264,7 +264,7 @@ bool ChinaDrmParser::parseMediaInfo(const char *infoFile, MediaInfo &info){
     }
 
     if (strlen(info.outputFile) == 0) {
-        char *defaultName = "output.ts";
+        const char *defaultName = "output.ts";
         memcpy(info.outputFile, defaultName, strlen(defaultName));
     }
 
@@ -296,13 +296,12 @@ bool ChinaDrmParser::trim(char *szBuffer) {
             processHeader = false;
             char cur = szBuffer[i];
             if (szBuffer[i] == '\r' || szBuffer[i] == '\n'){
-                UNILOGD("reset char: %d", szBuffer[i]);
+                //UNILOGD("reset char: %d", szBuffer[i]);
                 szBuffer[i] = '\0';
             }
             szBuffer[headerIndex++] == szBuffer[i++];
         }
     }
-
     // TODO
 
     return true;

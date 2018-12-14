@@ -11,16 +11,22 @@
 extern "C" {
 #endif
 
-const char *jstringToCString(JNIEnv *env, jstring jstr) {
-
+char *jstringToCString(JNIEnv *env, jstring jstr) {
     const char *rtn = env->GetStringUTFChars(jstr, 0);
 
-    //env->ReleaseStringUTFChars(jstr, rtn); // TODO
-    return rtn;
+    char *pDest = NULL;
+     if (rtn != NULL) {
+           int count = strlen(rtn);
+           pDest = new char[count + 1];
+           memset(pDest, 0, count + 1);
+           memcpy(pDest, rtn, count);
+     }
+    env->ReleaseStringUTFChars(jstr, rtn);
+    return pDest;
 }
 
-static char sdcardPath[256] = { 0 };
-//std::string gSdcardPath = "/sdcard";
+static char *gSdcardPath = NULL;
+
 /*
  * Class:     com_chinadrm_demo_ChinaDrmDecrypt
  * Method:    decrypt
@@ -31,30 +37,42 @@ JNIEXPORT jstring JNICALL Java_com_chinadrm_demo_ChinaDrmDecrypt_decrypt(JNIEnv 
     //std::string strInputFile = jstringToCString(env, inputPath);
     //std::string strOutputFile = jstringToCString(env, outputPath);
 
-    static char *strLicense = "AgAAATADAQAnAgAgrBfrbkppdWqDmR9MWAf/98NGe9Y8NVd96Yrqc8ZpgWUCAAAAAwIANwEAMBmj4YjVFUbMEH6A6W9sfqf3ld6tu2NsSacEPx27NEeGNrNZ2Ht1SCSUigq584ZMAwEAAgD/AwAkAQAAIPl85b+7EAuvFobgcrbFemQFPskv+0inVXQ38HwthRoH";
-    static char *strInputFile = "/sdcard/input.bbts";
-    static char *strOutputFile = "/sdcard/output.ts";
+    //static char *strLicense = "AgAAATADAQAnAgAgrBfrbkppdWqDmR9MWAf/98NGe9Y8NVd96Yrqc8ZpgWUCAAAAAwIANwEAMBmj4YjVFUbMEH6A6W9sfqf3ld6tu2NsSacEPx27NEeGNrNZ2Ht1SCSUigq584ZMAwEAAgD/AwAkAQAAIPl85b+7EAuvFobgcrbFemQFPskv+0inVXQ38HwthRoH";
+    //static char *strInputFile = "/sdcard/input.bbts";
+    //static char *strOutputFile = "/sdcard/output.ts";
     //int check = access(strInputFile.c_str(), F_OK);
     //UNILOGD("exist:%d, readable:%d ", access(strInputFile.c_str(), F_OK), access(strInputFile.c_str(), R_OK));
-    int licenseLength = strlen(strLicense);
+    //int licenseLength = strlen(strLicense);
 
     MediaInfo  info;
     ChinaDrmParser cl;
-    char  *mediaFile =  "/sdcard/media_info.txt";
-
-    if (!cl.parseMediaInfo(mediaFile, info)){
-        UNILOGD("parser media info failed");
-        return env->NewStringUTF("");
-    }
-
-
-
-    cl.setLicense(info.license, strlen(info.license), NULL, 0);
 
     char szInputFile[256] = { 0 };
     char szOutputFile[256] = { 0 };
+    char szMediaFile[256] = { 0 };
+    char sdcard[128] = { 0 };
+    const char  *mediaFile =  "/media_info.txt";
 
-    char *sdcard = "/sdcard/";
+    if (gSdcardPath != NULL){
+        memcpy(sdcard, gSdcardPath, strlen(gSdcardPath));
+        memcpy(sdcard + strlen(sdcard), "/", 1);
+
+        memcpy(szMediaFile, gSdcardPath, strlen(gSdcardPath));
+        memcpy(szMediaFile+ strlen(szMediaFile),  mediaFile, strlen(mediaFile));
+    } else {
+           const char *defaultPath = "/sdcard/";
+           memcpy(sdcard, defaultPath, strlen(defaultPath));
+           memcpy(szMediaFile, defaultPath, strlen(defaultPath));
+           memcpy(szMediaFile + strlen(szMediaFile), mediaFile, strlen(mediaFile));
+    }
+
+    UNILOGD("media file:%s", szMediaFile);
+    if (!cl.parseMediaInfo(szMediaFile, info)){
+        UNILOGD("parser media info failed");
+        return env->NewStringUTF("");
+    }
+    cl.setLicense(info.license, strlen(info.license), NULL, 0);
+
     memset(szInputFile, 0, sizeof(szInputFile));
     memcpy(szInputFile, sdcard, strlen(sdcard));
     memcpy(szInputFile + strlen(sdcard), info.inputFile, strlen(info.inputFile));
@@ -63,43 +81,26 @@ JNIEXPORT jstring JNICALL Java_com_chinadrm_demo_ChinaDrmDecrypt_decrypt(JNIEnv 
     memcpy(szOutputFile, sdcard, strlen(sdcard));
     memcpy(szOutputFile + strlen(sdcard), info.outputFile, strlen(info.outputFile));
 
-     UNILOGD("ChinaDrmDecrypt, license:%s, inputFile:%s, outputFile:%s ", info.license, szInputFile, szOutputFile);
+    UNILOGD("ChinaDrmDecrypt, license:%s, inputFile:%s, outputFile:%s, mediaFile:%s ", info.license, szInputFile, szOutputFile, szMediaFile);
     cl.parseTsData(szInputFile, szOutputFile);
-
-    //ChinaDrmParser *parser = new ChinaDrmParser();
-   // parser.setLicense(strLicense, licenseLength, NULL, 0);
-
-    /*if (gSdcardPath.empty()) {
-        UNILOGD("need to set sdcard path");
-        return env->NewStringUTF("");
-    }
-    std::string mediaFile = gSdcardPath + "/media_info.txt";
-     std::string outputFile = gSdcardPath + "/output.ts";
-*/
-
-    /*ChinaDrmParser parser;
-    MediaInfo info;
-    if (!parser.parseMediaInfo(mediaFile, info)){
-        UNILOGD("parser media info failed");
-        return env->NewStringUTF("");
-    }
-
-    UNILOGD("ChinaDrmDecrypt, license:%s, inputFile:%s, outputFile:%s \n", info.license.c_str(), info.inputFile.c_str(), info.outputFile.c_str());
-    parser.setLicense(info.license);
-
-    std::string inputFile  = gSdcardPath + "/" + info.inputFile;
-    std::string outputFile = gSdcardPath + "/" + info.outputFile;
-
-    parser.parseTsData(inputFile.c_str(), outputFile.c_str());
-    */
 
     return env->NewStringUTF(szOutputFile);;
 }
 
 JNIEXPORT void JNICALL Java_com_chinadrm_demo_ChinaDrmDecrypt_setSdcardPath(JNIEnv *env, jobject, jstring sdcardPath) {
-    //gSdcardPath = jstringToCString(env, sdcardPath);
-    //UNILOGD("sdcard path:%s", gSdcardPath.c_str());
+    gSdcardPath = jstringToCString(env, sdcardPath);
+
+
+    UNILOGD("sdcard path:%s", gSdcardPath);
 }
+
+JNIEXPORT void JNICALL Java_com_chinadrm_demo_ChinaDrmDecrypt_destroied(JNIEnv *env, jobject) {
+    if (gSdcardPath != NULL) {
+        UNILOGD("destroied");
+        delete []gSdcardPath;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

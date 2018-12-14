@@ -8,4 +8,5 @@ public class ChinaDrmDecrypt {
 
     public native String decrypt(String ticket, String srcFileName, String destFileName);
     public native void setSdcardPath(String sdcardPath);
+    public native void destroied();
 }
