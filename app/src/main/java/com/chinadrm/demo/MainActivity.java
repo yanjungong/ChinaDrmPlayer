@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Log.d(TAG, "onCreate: ");
         String sdcardPath =  Environment.getExternalStorageDirectory().getPath();
         ChinaDrmDecrypt drm  = new ChinaDrmDecrypt();
 
