@@ -82,7 +82,7 @@ JNIEXPORT jstring JNICALL Java_com_chinadrm_demo_ChinaDrmDecrypt_decrypt(JNIEnv 
     memcpy(szOutputFile + strlen(sdcard), info.outputFile, strlen(info.outputFile));
 
     UNILOGD("ChinaDrmDecrypt, license:%s, inputFile:%s, outputFile:%s, mediaFile:%s ", info.license, szInputFile, szOutputFile, szMediaFile);
-    cl.parseTsData(szInputFile, szOutputFile);
+    cl.parse(szInputFile, szOutputFile, PARSE_FROM_MEM);
 
     return env->NewStringUTF(szOutputFile);;
 }

@@ -2,14 +2,40 @@
 #include "Error.h"
 
 
-ChinaDrmParser::ChinaDrmParser() {
+ChinaDrmParser::ChinaDrmParser() : mInitFileData(NULL) {
+}
+
+int32_t ChinaDrmParser::parse(const char *inputFile, const char *outputFile, int type) {
+    if (type == PARSE_FROM_FILE) {
+        struct cgts_demux_context * demux_ct = cgts_demux_context_alloc_with_file(inputFile);
+        struct cgts_mux_context * mux_ct = cgts_mux_context_alloc_with_file(outputFile);
+
+        UNILOGD("parse chinadrm from file");
+        return coreParse(demux_ct, mux_ct);
+    } else {
+        FILE *f = fopen(inputFile, "rb");
+        if (f == NULL) {
+            UNILOGD("open file %s failed!", inputFile);
+        } else {
+            fseek(f, 0, SEEK_END);
+            int fileSize = ftell(f);
+            fseek(f, 0, SEEK_SET);
+
+            mInitFileData = (uint8_t*)malloc(fileSize);
+            uint32_t readSize = fread(mInitFileData, 1, fileSize, f);
+            UNILOGD("parse chinadrm from memory, input file size:%d, read size:%d", fileSize, readSize);
+
+            struct cgts_demux_context * demux_ct = cgts_demux_context_alloc_with_memory(mInitFileData, &readSize);
+            struct cgts_mux_context * mux_ct = cgts_mux_context_alloc_with_file(outputFile);
+            return coreParse(demux_ct, mux_ct);
+        }
+    }
+
+    return 0;
 }
 
 int32_t ChinaDrmParser::setLicense(const char *drmLicense, int licenseLength, const char *uid , int uidLength, int32_t instanceId){
     UNILOGD("setLicense(drmLicense=%s, uid=%s, instanceId=%d)", drmLicense, uid, instanceId);
-
-    //mDrmLicense = drmLicense;
-    //mDrmUid = uid;
      if (drmLicense == NULL || licenseLength == 0) {
           return Error::ERROR_CODE_CHINA_DRM_LICENSE_EMPTY;
      }
@@ -33,14 +59,8 @@ int32_t ChinaDrmParser::setLicense(const char *drmLicense, int licenseLength, co
     return errorType;
 }
 
- int32_t ChinaDrmParser::parseTsData(const char *inputFile, const char * outputFile){
-      struct cgts_demux_context * demux_ct = cgts_demux_context_alloc_with_file(inputFile);
-         struct cgts_mux_context * mux_ct = cgts_mux_context_alloc_with_file(outputFile);
+int32_t ChinaDrmParser::coreParse(cgts_demux_context * demux_ct, cgts_mux_context * mux_ct){
          UNILOGD("parseTsData, inputFile:%p, outputFile:%p", demux_ct->input_fp, mux_ct->output_fp );
-
-         if (demux_ct->input_fp == NULL || mux_ct->output_fp == NULL) {
-             return 0;
-         }
 
          struct cgts_pid_buffer * packet = NULL;
          while(cgts_read_pxx_packet(demux_ct, &packet) == true) {
@@ -82,7 +102,7 @@ int32_t ChinaDrmParser::setLicense(const char *drmLicense, int licenseLength, co
 
 
          return 0;
- }
+}
 
 int32_t ChinaDrmParser::parseReturnCode(int retCode){
     int32_t codeType = Error::ERROR_CODE_CHINA_DRM_BASE;
